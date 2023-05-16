@@ -26,14 +26,15 @@ class UsuarioDAO
     public function insert(Usuario $usuario): Usuario|bool
     {
         $stmt = $this->pdo->prepare("INSERT INTO Usuario (email, senha, nome, foto, tel, endereco, cpf) VALUES (:email,:senha,:nome,:foto,:tel,:endereco,:cpf)");
+        $usuario->criptografarSenha();
         $dados = [
-            'email'     => $usuario->getEmail(),
-            'senha'     => $usuario->getSenha(),
-            'nome'      => $usuario->getNome(),
-            'foto'      => $usuario->getFoto(),
-            'tel'       => $usuario->getTel(),
-            'endereco'  => $usuario->getEndereco(),
-            'cpf'       => $usuario->getCpf()
+            'email'     => $usuario->email,
+            'senha'     => $usuario->senha,
+            'nome'      => $usuario->nome,
+            'foto'      => $usuario->foto,
+            'tel'       => $usuario->tel,
+            'endereco'  => $usuario->endereco,
+            'cpf'       => $usuario->cpf
         ];
         try {
             $stmt->execute($dados);
@@ -50,7 +51,23 @@ class UsuarioDAO
         try {
             if($stmt->execute(['id'=>$id])){
                 $row = $stmt->fetch(PDO::FETCH_ASSOC);
-                return (new Usuario($row['id'], $row['email'], $row['senha'], $row['nome'], $row['foto'], $row['tel'], $row['endereco'], $row['cpf'], $row['creation_time'], $row['modification_time']));
+                return (new Usuario(true, $row['id'], $row['email'], $row['senha'], $row['nome'], $row['foto'], $row['tel'], $row['endereco'], $row['cpf'], $row['creation_time'], $row['modification_time']));
+            }
+            return false;   
+
+        } catch (\PDOException $e) {
+            $this->erro = 'Erro ao selecionar usuário: ' . $e->getMessage();
+            return false;
+        }
+    }
+
+    public function selectByEmail($email): Usuario|bool
+    {
+        $stmt = $this->pdo->prepare("SELECT * FROM Usuario WHERE Usuario.email = :email");
+        try {
+            if($stmt->execute(['email'=>$email])){
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                return (new Usuario(true,$row['id'], $row['email'], $row['senha'], $row['nome'], $row['foto'], $row['tel'], $row['endereco'], $row['cpf'], $row['creation_time'], $row['modification_time']));
             }
             return false;   
 
@@ -111,14 +128,14 @@ class UsuarioDAO
     public function update(Usuario $usuario)
     {
         $stmt = $this->pdo->prepare("UPDATE Usuario SET email = ?, senha = ?, nome = ?, foto = ?, tel = ?, endereco = ?, cpf = ? WHERE id = ?");
-        $email = $usuario->getEmail();
-        $senha = $usuario->getSenha();
-        $nome = $usuario->getNome();
-        $foto = $usuario->getFoto();
-        $tel = $usuario->getTel();
-        $endereco = $usuario->getEndereco();
-        $cpf = $usuario->getCpf();
-        $id = $usuario->getId();
+        $email = $usuario->email;
+        $senha = $usuario->senha;
+        $nome = $usuario->nome;
+        $foto = $usuario->foto;
+        $tel = $usuario->tel;
+        $endereco = $usuario->endereco;
+        $cpf = $usuario->cpf;
+        $id = $usuario->id;
         try {
             $stmt->execute([$email, $senha, $nome, $foto, $tel, $endereco, $cpf, $id]);
             return $stmt->rowCount();
